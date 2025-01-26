@@ -93,8 +93,33 @@ public class ChallengeSolver {
             }
         }
 
-        for(int i = 0; i < solution.size(); i++) {
-            System.out.println();
+        int[] inHandItens = new int[nItems];
+
+        for (Integer integer : solution) {
+           int i =totalUnitsAisles[integer].getKey();
+           for(Map.Entry<Integer, Integer> entry : aisles.get(i).entrySet()){
+               inHandItens[entry.getKey()] += entry.getValue();
+           }
+        }
+        List<Integer> solution2 = new ArrayList<>();
+        for(int i = 0; i < sOrders.size(); i++){
+            int[] auxItens = new int[nItems];
+            Boolean acept = true;
+
+            for(Map.Entry<Integer, Integer> entry : sOrders.get(i).entrySet()){
+                if(inHandItens[entry.getKey()] >= entry.getValue()){
+                    auxItens[entry.getKey()] += entry.getValue();
+                } else acept = false;
+            }
+            if(acept){
+                solution2.add(totalUnitsAisles[i].getKey());
+                for(int j = 0; j < nItems; j++){
+                    inHandItens[j] -= auxItens[j];
+                }
+            }
+            for(int j = 0; j < nItems; j++){
+                auxItens[j] = 0;
+            }
         }
     }
     public ChallengeSolution solve(StopWatch stopWatch) {
