@@ -25,13 +25,19 @@ public class Challenge {
             BufferedReader reader = new BufferedReader(new FileReader(inputFilePath));
             String line = reader.readLine();
             String[] firstLine = line.split(" ");
+            // número de pedidos
             int nOrders = Integer.parseInt(firstLine[0]);
+            // número de itens
             int nItems = Integer.parseInt(firstLine[1]);
+            //número de corredores
             int nAisles = Integer.parseInt(firstLine[2]);
 
             // Initialize orders and aisles arrays
+
+            // vetor de tuplas, onde o primeiro elemento é o itemIndex e o segundo a quantidade
             orders = new ArrayList<>(nOrders);
             aisles = new ArrayList<>(nAisles);
+
             this.nItems = nItems;
 
             // Read orders
@@ -43,7 +49,9 @@ public class Challenge {
             // Read wave size bounds
             line = reader.readLine();
             String[] bounds = line.split(" ");
+            //lower bound
             waveSizeLB = Integer.parseInt(bounds[0]);
+            //upper bound
             waveSizeUB = Integer.parseInt(bounds[1]);
 
             reader.close();
