@@ -121,6 +121,9 @@ public class ChallengeSolver {
                 auxItens[j] = 0;
             }
         }
+        System.out.println(solution);
+        System.out.println(solution2);
+
     }
     public ChallengeSolution solve(StopWatch stopWatch) {
 
