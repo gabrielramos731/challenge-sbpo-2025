@@ -23,11 +23,11 @@ public class ChallengeSolver {
         this.nItems = nItems;
         this.waveSizeLB = waveSizeLB;
         this.waveSizeUB = waveSizeUB;
+        this.totalUnitsAisles = new Map.Entry[aisles.size()];
+        this.totalUnitsOrders = new Map.Entry[orders.size()];
     }
 
     public void fillTotalUnits(List<Map<Integer, Integer>> arr, Map.Entry<Integer,Integer>[] units){
-        units = new Map.Entry[arr.size()];
-
         int n = arr.size();
         for(int i = 0; i < n; i++) {
             int sum = 0;
@@ -37,6 +37,7 @@ public class ChallengeSolver {
             units[i] = new AbstractMap.SimpleEntry<>(i, sum);
         }
     }
+
     private void heapfy(List<Map<Integer, Integer>> arr, int n, int i, Map.Entry<Integer,Integer>[] units){
         int min = i;
         int l = 2 * i +1;
@@ -54,7 +55,6 @@ public class ChallengeSolver {
            heapfy(arr, n, min, units);
        }
     }
-
     private void heapSort(List<Map<Integer, Integer>> arr,Map.Entry<Integer,Integer>[] units){
         int n = arr.size();
         for(int i = n/2-1; i >= 0; i--){
@@ -70,17 +70,16 @@ public class ChallengeSolver {
             heapfy(arr, i, 0, units);
         }
     }
-
     private void initialSolution01(){
         //calcula a quantidade de itens em cada corredor e pedido
         fillTotalUnits(orders, totalUnitsOrders);
         fillTotalUnits(aisles, totalUnitsAisles);
 
         //ordena pedidos e corredores pela quantidade de itens presentes
-        List<Map<Integer,Integer>> cOrders = new ArrayList<>(orders);
+        List<Map<Integer,Integer>> sOrders = new ArrayList<>(orders);
         List<Map<Integer,Integer>> cAisles = new ArrayList<>(aisles);
 
-        heapSort(cOrders, totalUnitsOrders);
+        heapSort(sOrders, totalUnitsOrders);
         heapSort(cAisles, totalUnitsAisles);
 
         List<Integer> solution = new ArrayList<>();
@@ -94,9 +93,14 @@ public class ChallengeSolver {
             }
         }
 
-
+        for(int i = 0; i < solution.size(); i++) {
+            System.out.println();
+        }
     }
     public ChallengeSolution solve(StopWatch stopWatch) {
+
+        initialSolution01();
+
 
         return null;
     }
