@@ -70,7 +70,7 @@ public class ChallengeSolver {
             heapfy(arr, i, 0, units);
         }
     }
-    private void initialSolution01(){
+    private ChallengeSolution initialSolution01(){
         //calcula a quantidade de itens em cada corredor e pedido
         fillTotalUnits(orders, totalUnitsOrders);
         fillTotalUnits(aisles, totalUnitsAisles);
@@ -112,7 +112,7 @@ public class ChallengeSolver {
                 } else acept = false;
             }
             if(acept){
-                solution2.add(totalUnitsAisles[i].getKey());
+                solution2.add(totalUnitsOrders[i].getKey());
                 for(int j = 0; j < nItems; j++){
                     inHandItens[j] -= auxItens[j];
                 }
@@ -124,13 +124,11 @@ public class ChallengeSolver {
         System.out.println(solution);
         System.out.println(solution2);
 
+        return new ChallengeSolution(new HashSet<>(solution), new HashSet<>(solution2));
     }
     public ChallengeSolution solve(StopWatch stopWatch) {
 
-        initialSolution01();
-
-
-        return null;
+        return initialSolution01();
     }
 
     /*
