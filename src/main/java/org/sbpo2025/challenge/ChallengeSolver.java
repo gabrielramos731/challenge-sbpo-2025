@@ -102,7 +102,7 @@ public class ChallengeSolver {
         for(int i : selectedAisles){
             calcAmountOfItens(aisles.get(i), inHandItens);
         }
-        return inHandItens
+        return inHandItens;
     }
 
     List<Integer> selectOrdersByAisles(List<Integer> selectedAisles){
@@ -170,8 +170,8 @@ public class ChallengeSolver {
             }
         }
 
-        List<Integer> solution selectOrdersByAisles(solution);
-        return new ChallengeSolution(new HashSet<>(solution), new HashSet<>(solution2));
+        List<Integer> solution2 =  selectOrdersByAisles(solution);
+        return new ChallengeSolution(new HashSet<>(solution2), new HashSet<>(solution2));
     }
 
     public ChallengeSolution solve(StopWatch stopWatch) {
