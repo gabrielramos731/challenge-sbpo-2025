@@ -40,6 +40,7 @@ public class ChallengeSolver {
         amountItensOrders = new int[nItems];
         initialize();
     }
+
     // calcula a soma da quantidade de itens em um pedido ou corredor
     public void fillTotalUnits(List<Map<Integer, Integer>> arr, Map.Entry<Integer,Integer>[] units){
         int n = arr.size();
@@ -51,6 +52,7 @@ public class ChallengeSolver {
             units[i] = new AbstractMap.SimpleEntry<>(i, sum);
         }
     }
+
     // orderna corredores e pedidos baseados na quantidade de itens
     private void heapfy(List<Map<Integer, Integer>> arr, int n, int i, Map.Entry<Integer,Integer>[] units){
         int min = i;
@@ -69,6 +71,7 @@ public class ChallengeSolver {
            heapfy(arr, n, min, units);
        }
     }
+
     private void heapSort(List<Map<Integer, Integer>> arr,Map.Entry<Integer,Integer>[] units){
         int n = arr.size();
         for(int i = n/2-1; i >= 0; i--){
@@ -84,12 +87,14 @@ public class ChallengeSolver {
             heapfy(arr, i, 0, units);
         }
     }
+
     // calcula o total dos itens idexados pelo id em um corredor ou pedido
     void calcAmountOfItens(Map<Integer, Integer> thing,int[] amount){
         for(Map.Entry<Integer, Integer> entry : thing.entrySet()){
             amount[entry.getKey()] += entry.getValue();
         }
     }
+
     // calcula o total dos itens idexados pelo id em todos os corredores ou pedidos
     void calcTotalAmountOfItems(int[] amount, List<Map<Integer, Integer>> arr){
         for(Map<Integer, Integer> thing : arr){
@@ -97,18 +102,20 @@ public class ChallengeSolver {
         }
     }
 
+    // calcula a quantidade de itens indexados pelo id nos corredores selecionados
     int [] generateItensInHand(List<Integer> selectedAisles){
         int [] inHandItens = new int[nItems];
         for(int i : selectedAisles){
             calcAmountOfItens(aisles.get(i), inHandItens);
         }
+
         return inHandItens;
     }
 
+    // retorna os pedidos aceitos por id com base nos corredores selecionados
     List<Integer> selectOrdersByAisles(List<Integer> selectedAisles){
         // faz o calculo do total de itens presentes nestes corredores
         int[] inHandItens = generateItensInHand(selectedAisles);
-
 
         List<Integer> selectedOrders = new ArrayList<>();
         // percorre os pedidos do com maior quantidade até o menor
@@ -118,11 +125,12 @@ public class ChallengeSolver {
             // percorre os itens do pedido
             for(Map.Entry<Integer, Integer> entry : sOrders.get(i).entrySet()){
                 //confere se podemos atenter aquele item
-                if(inHandItens[entry.getKey()] >= entry.getValue()){
-                    calcAmountOfItens(orders.get(i), auxItens);
-                } else acept = false; // caso um item não puder ser atendido
+                if(inHandItens[entry.getKey()] < entry.getValue())
+                    acept = false;
             }
-            // se todos os pedidos forem atenditos
+            calcAmountOfItens(orders.get(i), auxItens);
+
+            // se todos os itens do pedido 'i' forem atenditos
             if(acept){
                 // pedido adicionado a solução
                 selectedOrders.add(totalUnitsOrders[i].getKey());
@@ -137,6 +145,7 @@ public class ChallengeSolver {
         }
         return selectedOrders;
     }
+
     private void initialize(){
         //calcula a quantidade de itens em cada corredor e pedido
         fillTotalUnits(orders, totalUnitsOrders);
@@ -171,7 +180,7 @@ public class ChallengeSolver {
         }
 
         List<Integer> solution2 =  selectOrdersByAisles(solution);
-        return new ChallengeSolution(new HashSet<>(solution2), new HashSet<>(solution2));
+        return new ChallengeSolution(new HashSet<>(solution2), new HashSet<>(solution));  //sol2 sol2 ???
     }
 
     public ChallengeSolution solve(StopWatch stopWatch) {
