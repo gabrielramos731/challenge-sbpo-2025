@@ -185,7 +185,10 @@ public class ChallengeSolver {
         bound = 0;
 
         for(int i : solution2) bound += totalUnitsOrders[i].getValue();
-        if(bound < waveSizeLB) System.out.println("LB não atingindo");
+        while(bound < waveSizeLB && solution.size() < sAisles.size()){
+            solution.add(totalUnitsAisles[solution.size()].getKey());
+            solution2 =  selectOrdersByAisles(solution);
+        }
         return new ChallengeSolution(new HashSet<>(solution2), new HashSet<>(solution));  //sol2 sol2 ???
     }
 
