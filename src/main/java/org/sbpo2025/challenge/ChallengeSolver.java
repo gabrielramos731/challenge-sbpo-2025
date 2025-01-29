@@ -119,7 +119,7 @@ public class ChallengeSolver {
         int[] inHandItens = generateItensInHand(selectedAisles);
         List<Integer> selectedOrders = new ArrayList<>();
         // percorre os pedidos do com maior quantidade até o menor
-        for(int i = 0; i < sOrders.size(); i++){
+        for(int i = 0; i < sOrders.size() ; i++){
             int[] auxItens = new int[nItems];
             calcAmountOfItens(sOrders.get(i), auxItens);
 
@@ -186,9 +186,12 @@ public class ChallengeSolver {
 
         for(int i : solution2) bound += totalUnitsOrders[i].getValue();
         while(bound < waveSizeLB && solution.size() < sAisles.size()){
+            bound = 0;
             solution.add(totalUnitsAisles[solution.size()].getKey());
             solution2 =  selectOrdersByAisles(solution);
+            for(int i : solution2) bound += totalUnitsOrders[i].getValue();
         }
+        if(bound > waveSizeUB ) System.out.println("deu caca");
         return new ChallengeSolution(new HashSet<>(solution2), new HashSet<>(solution));  //sol2 sol2 ???
     }
 
