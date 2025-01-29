@@ -114,21 +114,24 @@ public class ChallengeSolver {
 
     // retorna os pedidos aceitos por id com base nos corredores selecionados
     List<Integer> selectOrdersByAisles(List<Integer> selectedAisles){
+
         // faz o calculo do total de itens presentes nestes corredores
         int[] inHandItens = generateItensInHand(selectedAisles);
-
         List<Integer> selectedOrders = new ArrayList<>();
         // percorre os pedidos do com maior quantidade até o menor
         for(int i = 0; i < sOrders.size(); i++){
             int[] auxItens = new int[nItems];
+            calcAmountOfItens(sOrders.get(i), auxItens);
+
             Boolean acept = true;
             // percorre os itens do pedido
             for(Map.Entry<Integer, Integer> entry : sOrders.get(i).entrySet()){
                 //confere se podemos atenter aquele item
-                if(inHandItens[entry.getKey()] < entry.getValue())
+                if (inHandItens[entry.getKey()] < entry.getValue()) {
                     acept = false;
+                    break;
+                }
             }
-            calcAmountOfItens(orders.get(i), auxItens);
 
             // se todos os itens do pedido 'i' forem atenditos
             if(acept){
@@ -154,7 +157,6 @@ public class ChallengeSolver {
         //ordena pedidos e corredores pela quantidade de itens presentes e salva em uma copia do vetor original
         heapSort(sOrders, totalUnitsOrders);
         heapSort(sAisles, totalUnitsAisles);
-
         //calcular a quantidade total dos itens nos corredores e pedidos
         calcTotalAmountOfItems(amountItensAisles, aisles);
         calcTotalAmountOfItems(amountItensOrders,orders);
@@ -180,6 +182,10 @@ public class ChallengeSolver {
         }
 
         List<Integer> solution2 =  selectOrdersByAisles(solution);
+        bound = 0;
+
+        for(int i : solution2) bound += totalUnitsOrders[i].getValue();
+        if(bound < waveSizeLB) System.out.println("LB não atingindo");
         return new ChallengeSolution(new HashSet<>(solution2), new HashSet<>(solution));  //sol2 sol2 ???
     }
 
