@@ -12,6 +12,8 @@ public class ChallengeSolver {
     protected List<Map<Integer, Integer>> orders;
     protected List<Map<Integer, Integer>> aisles;
     protected int nItems;
+    protected int nOrders;
+    protected int nAisles;
     protected int waveSizeLB;
     protected int waveSizeUB;
 
@@ -32,6 +34,8 @@ public class ChallengeSolver {
     //item mais comum nos pedidos
     int mostComumItem;
 
+    private static Map<String, List<Integer>> memo;
+
     public ChallengeSolver(List<Map<Integer, Integer>> orders, List<Map<Integer, Integer>> aisles, int nItems, int waveSizeLB, int waveSizeUB) {
         this.orders = orders;
         this.aisles = aisles;
@@ -48,7 +52,13 @@ public class ChallengeSolver {
         amountItensOrders = new int[nItems];
         initialize();
     }
-
+    int sum(int[] vetor, int n){
+        int sum = 0;
+        for(int i = 0; i < n; i++){
+            sum += vetor[i];
+        }
+        return sum;
+    }
     // calcula a soma da quantidade de itens em um pedido ou corredor
     public void sumItens(List<Map<Integer, Integer>> arr, Map.Entry<Integer,Integer>[] units,int[] sumV){
         int n = arr.size();
@@ -223,6 +233,9 @@ public class ChallengeSolver {
         for(int i = 1; i < nItems; i++){
             if(amountItensOrders[i] > amountItensOrders[mostComumItem]) mostComumItem = i;
         }
+
+        nOrders = orders.size();
+        nAisles = aisles.size();
         //calcula a quantidade de itens em cada corredor e pedido
         sumItens(orders, sumSTotalUnitsOrder,sumTotalUnitsOrder);
 
@@ -233,7 +246,7 @@ public class ChallengeSolver {
         //calcular a quantidade total dos itens nos corredores e pedidos
         calcTotalAmountOfItems(amountItensAisles, aisles);
         calcTotalAmountOfItems(amountItensOrders,orders);
-
+        memo = new HashMap<>();
         //calcular o item que com maior presença nos pedidos
 
 
@@ -288,6 +301,7 @@ public class ChallengeSolver {
         for(int i = 0; i < sAisles.size(); i++){
             selectedAislesAux.add(sumSTotalUnitsAisle[i].getKey());
             if(bound + sumTotalUnitsAisle[sumSTotalUnitsAisle[i].getKey()] >= waveSizeLB){
+                if(bound > waveSizeLB) break;
                 selectedOrdersAux = selectOrdersByAisles(selectedAislesAux);
                 selectedROrdersAux = selectReverseOrdersByAisles(selectedAislesAux);
                 double auxRbound = calcSolutionBound(selectedROrdersAux);
@@ -310,9 +324,87 @@ public class ChallengeSolver {
         if(selectedAislesAux.isEmpty()) return initialSolution01();
         return new ChallengeSolution(new HashSet<>(bSelectedOrders), new HashSet<>(bSelectedAisles));
     }
+    private List<Integer> melhorSolução(List<Integer> s1, List<Integer> s2){
+        if(calcSolutionBound(s1) > calcSolutionBound(s2)) return s1;
+        else return s2;
+    }
+    private boolean podeAtender(int k, int [] estoque){
+        int [] estoqueAux = new int[estoque.length];
+        calcAmountOfItens(orders.get(k), estoqueAux);
+
+        for(int i = 0; i <nItems;i++){
+            if(estoqueAux[i] > estoque[i]){
+                return false;
+            }
+        }
+        for(int i = 0; i <nItems; i++){
+            estoque[i] -= estoqueAux[i];
+        }
+        return true;
+    }
+    List<Integer> F(int k, int valAlvo, int[] estoque){
+        if(k < 0 || valAlvo < 0) return new ArrayList<>(); // pedidos zerados ou meta atingida
+
+        //chave de memorização
+
+
+        // não incluir pedido atual
+        List<Integer> aux1 = F(k-1, valAlvo, estoque);
+        List<Integer> aux2 = new ArrayList<>();
+        int valk = sumTotalUnitsOrder[k];
+        int [] auxEstoque = Arrays.copyOf(estoque, estoque.length);
+        if(podeAtender(k,auxEstoque)){
+            aux2 = new ArrayList<>(F(k-1, valAlvo-valk, auxEstoque));
+            aux2.add(k);
+        }
+
+        return melhorSolução(aux1, aux2);
+    }
+    public  List<Integer> fI(int valAlvo, int[] estoque) {
+        int n = nOrders;
+        List<Integer>[] dp = new ArrayList[valAlvo + 1];
+        dp[0] = new ArrayList<>();
+
+        for (int k = 0; k < n; k++) {
+            int valk = sumTotalUnitsOrder[k];
+            int[] auxEstoque = Arrays.copyOf(estoque, estoque.length);
+            if (podeAtender(k, auxEstoque)) {
+                for (int j = valAlvo; j >= valk; j--) {
+                    if (dp[j - valk] != null) {
+                        List<Integer> novaLista = new ArrayList<>(dp[j - valk]);
+                        novaLista.add(k);
+                        if (dp[j] == null || melhorSolução(dp[j], novaLista) == novaLista) {
+                            dp[j] = novaLista;
+                        }
+                    }
+                }
+            }
+        }
+
+        for (int i = valAlvo; i >= 0; i--) {
+            if (dp[i] != null) {
+                return dp[i];
+            }
+        }
+        return new ArrayList<>();
+    }
+    private ChallengeSolution solution3(){
+        int bound = 0;
+        List<Integer> solutionAisles = new ArrayList<>();
+        for(int i = 0; i < sAisles.size(); i++){
+            bound += sumTotalUnitsAisle[sumSTotalUnitsAisle[i].getKey()];
+            if(bound > waveSizeUB) break;
+            else if(bound > waveSizeLB + (waveSizeLB/2)) break;
+            else{
+                solutionAisles.add(sumSTotalUnitsAisle[i].getKey());
+            }
+        }
+        List<Integer> solutionOrders = fI(waveSizeUB,generateItensInHand(solutionAisles));
+        return new ChallengeSolution(new HashSet<>(solutionOrders), new HashSet<>(solutionAisles));
+    }
     public ChallengeSolution solve(StopWatch stopWatch) {
 
-        return initialSolution02();
+        return solution3();
     }
 
     /*
