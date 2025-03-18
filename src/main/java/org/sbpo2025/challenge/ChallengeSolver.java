@@ -1,5 +1,6 @@
 package org.sbpo2025.challenge;
 
+import org.apache.commons.lang3.IntegerRange;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.awt.geom.Arc2D;
@@ -183,16 +184,21 @@ public class ChallengeSolver {
         }
     }
 
+    private void trimAisles(){
+        for(Map<Integer, Integer> entity : aisles){
+            for(Map.Entry<Integer, Integer> entry : entity.entrySet()){
+                if(entry.getValue() > itemsInOrders.get(entry.getKey())){
+//                    if(nOrders == 7) System.out.println("lalalal");
+                    entity.replace(entry.getKey(), entry.getValue(), itemsInOrders.get(entry.getKey()));
+                }
+            }
+        }
+    }
+
     private void initialize(){
 
         nOrders = orders.size();
         nAisles = aisles.size();
-
-        // Count items in orders and aisles
-        orderItems = new ArrayList<>();
-        aisleItems = new ArrayList<>();
-        countItemsInCollection(orders, orderItems);
-        countItemsInCollection(aisles, aisleItems);
 
         itemsInOrders = new ArrayList<>();
         itemsInAisles = new ArrayList<>();
@@ -201,8 +207,16 @@ public class ChallengeSolver {
             itemsInAisles.add(0);
         }
 
-        calcSumOfItemsTypes(itemsInOrders, aisles);
+        calcSumOfItemsTypes(itemsInOrders, orders);
+        trimAisles();
         calcSumOfItemsTypes(itemsInAisles, aisles);
+
+
+        // Count items in orders and aisles
+        orderItems = new ArrayList<>();
+        aisleItems = new ArrayList<>();
+        countItemsInCollection(orders, orderItems);
+        countItemsInCollection(aisles, aisleItems);
 
         mostComumItemInAisles = 0;
         mostComumItemInOrders = 0;
@@ -409,8 +423,8 @@ public class ChallengeSolver {
 
         ArrayList<Double> aislesPriority = new ArrayList<>();
 
-//        aislesRuleQtt(aislesPriority);
-        aislesRuleMostComumItem(aislesPriority);
+        aislesRuleQtt(aislesPriority);
+//        aislesRuleMostComumItem(aislesPriority);
 
         heapSort(aislesOrder, aislesPriority);
 
@@ -430,7 +444,7 @@ public class ChallengeSolver {
         }
 
         // Select orders based in selected aisles
-        int selectedOrdersItems = meta_raps(selectedOrdersBool, generateItensInHand(selectedOrdersBool, solutionAisles), 1, 1, 5, rng);
+        int selectedOrdersItems = meta_raps(selectedOrdersBool, generateItensInHand(selectedOrdersBool, solutionAisles), 1, 1, rng);
 
         List<Integer> solutionOrders = new ArrayList<>();
 
@@ -463,7 +477,7 @@ public class ChallengeSolver {
             solutionAisles.add(aislesOrder.get(i));
 
             // Try to add more orders in current solution
-            selectedOrdersItems += meta_raps(selectedOrdersBool, generateItensInHand(selectedOrdersBool, solutionAisles), 0.8, 0.5,  5, rng);
+            selectedOrdersItems += meta_raps(selectedOrdersBool, generateItensInHand(selectedOrdersBool, solutionAisles), 1, 1, rng);
         }
 
         return bestSolution;
@@ -482,13 +496,45 @@ public class ChallengeSolver {
         }
     }
 
-    public void rule2(ArrayList<Double> utilityRatio){
+    public void rule2(ArrayList<Double> utilityRatio, ArrayList<Integer> availableOrders, ArrayList<Integer> availableItems, double weight1, double weight2, double weight3){
+        ArrayList<Double> itemsInAvailableOrders = new ArrayList<>();
+        for(int i=0; i<nItems; i++){
+            itemsInAvailableOrders.add(0.0);
+        }
+
+        for(Integer ord : availableOrders){
+            Map<Integer, Integer> order = orders.get(ord);
+            for(Map.Entry<Integer, Integer> item : order.entrySet()){
+                Double oldValue = itemsInAvailableOrders.get(item.getKey());
+                itemsInAvailableOrders.set(item.getKey(), oldValue + item.getValue());
+            }
+        }
+
+        for(int i=0; i<nItems; ++i){
+            Double oldValue = itemsInAvailableOrders.get(i);
+            if(availableItems.get(i)==0){
+                itemsInAvailableOrders.set(i, 0.0);
+            }else{
+                itemsInAvailableOrders.set(i, oldValue/availableItems.get(i));
+            }
+        }
+
         for(int i=0; i<nOrders; ++i){
-            
+            Map<Integer, Integer> order = orders.get(i);
+            double value1 = 0;
+            double value2 = 0;
+            for(Map.Entry<Integer, Integer> item : order.entrySet()){
+                value1 += (double)item.getValue()*(double)availableItems.get(item.getKey());
+                value2 += (double)item.getValue() * itemsInAvailableOrders.get(item.getKey());
+            }
+            value1 *= weight1;
+            value2 *= weight2;
+            double value3 = weight3 * orderItems.get(i);
+            utilityRatio.add(value1+value2+value3);
         }
     }
 
-    public int meta_raps(ArrayList<Boolean> selectedOrders, ArrayList<Integer> availableItems, double priority, double restriction, int nb_iterations, Random rng){
+    public int meta_raps(ArrayList<Boolean> selectedOrders, ArrayList<Integer> availableItems, double priority, double restriction, Random rng){
 
         int itemsAdded = 0;
         int itemsUBSpent = 0;
@@ -516,6 +562,13 @@ public class ChallengeSolver {
                 availableOrders.add(i);
             }
         }
+//        if(nOrders == 16) System.out.println(availableItems);
+//        if(nOrders == 16) System.out.println(selectedOrders);
+//        if(nOrders == 16) System.out.println(availableOrders);
+//        if(nOrders == 16) System.out.println(utilityRatio);
+        utilityRatio.clear();
+        rule2(utilityRatio, availableOrders, availableItems, 1, 1, 1);
+//        if(nOrders == 16) System.out.println(utilityRatio);
 
         heapSort(availableOrders, utilityRatio);
 //        System.out.println(penaltyFactor);
