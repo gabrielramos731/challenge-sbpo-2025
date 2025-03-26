@@ -46,7 +46,7 @@ public class ChallengeSolver {
     int mostComumItemInAisles;
 
     private static Map<String, List<Integer>> memo;
-
+    private ArrayList<Integer> sortedBySizeOrders;
     public ChallengeSolver(List<Map<Integer, Integer>> orders, List<Map<Integer, Integer>> aisles, int nItems, int waveSizeLB, int waveSizeUB) {
         this.orders = orders;
         this.aisles = aisles;
@@ -139,18 +139,19 @@ public class ChallengeSolver {
  */
 
     // calcula a quantidade de itens indexados pelo id nos corredores selecionados
-    ArrayList<Integer> generateItensInHand(ArrayList<Boolean> selectedOrders, List<Integer> selectedAisles){
+    ArrayList<Integer> generateItensInHand(ArrayList<Boolean> selectedOrders, List<Boolean> selectedAisles){
         ArrayList<Integer> inHandItens = new ArrayList<>();
 
         for(int i = 0; i < nItems; i++){
             inHandItens.add(0);
         }
 
-        for(int i : selectedAisles){
-            calcAmountOfItens(aisles.get(i), inHandItens);
+        for(int i = 0 ; i < nAisles; i++){
+            if(selectedAisles.get(i)) calcAmountOfItens(aisles.get(i), inHandItens);
         }
 
         for(int i=0;i<nOrders; i++){
+            if(nOrders != selectedOrders.size()) System.out.println(nOrders + " " + selectedOrders.size());
             if(selectedOrders.get(i)){
                 Map<Integer, Integer> order = orders.get(i);
                 for(Map.Entry<Integer, Integer> entry : order.entrySet()){
@@ -224,7 +225,15 @@ public class ChallengeSolver {
             if(itemsInAisles.get(i) > itemsInAisles.get(mostComumItemInAisles)) mostComumItemInAisles = i;
             if(itemsInOrders.get(i) > itemsInOrders.get(mostComumItemInOrders)) mostComumItemInOrders = i;
         }
-
+        ArrayList<Double> orderItemsD = new ArrayList<>();
+        for (Integer item : orderItems) {
+            orderItemsD.add(item.doubleValue());
+        }
+        sortedBySizeOrders = new ArrayList<>();
+        for(int i=0; i<nOrders; i++){
+            sortedBySizeOrders.add(i);
+        }
+        heapSort(sortedBySizeOrders,orderItemsD);
        // memo = new HashMap<>();
         //calcular o item que com maior presença nos pedidos
 
@@ -408,12 +417,14 @@ public class ChallengeSolver {
         }
     }
 
-    private ChallengeSolution solution4(){
+    private ChallengeSolution solution4(ArrayList<Boolean> bestSelectedOrders, ArrayList<Boolean> bestSelectedAisles ){
 
         Random rng = new Random(123);
 
         // Sort aisles by priority
         List<Integer> solutionAisles = new ArrayList<>();
+
+        ArrayList<Boolean> booleanAisles = new ArrayList<>();
 
         ArrayList<Integer> aislesOrder = new ArrayList<>();
 
@@ -442,9 +453,14 @@ public class ChallengeSolver {
         for(int i=0; i<nOrders; i++){
             selectedOrdersBool.add(false);
         }
-
+        for(int i=0; i<nAisles; i++){
+            booleanAisles.add(false);
+        }
+        for(int i : solutionAisles){
+            booleanAisles.set(i,true);
+        }
         // Select orders based in selected aisles
-        int selectedOrdersItems = meta_raps(selectedOrdersBool, generateItensInHand(selectedOrdersBool, solutionAisles), 1, 1, rng);
+        int selectedOrdersItems = meta_raps(selectedOrdersBool, generateItensInHand(selectedOrdersBool, booleanAisles), 1, 1, rng);
 
         List<Integer> solutionOrders = new ArrayList<>();
 
@@ -466,6 +482,12 @@ public class ChallengeSolver {
 
                 // If current solution is better than the best, change best solution
                 if(computeObjectiveFunction(currentSolution) > bestResult){
+                    bestSelectedAisles.clear();
+                    bestSelectedAisles.addAll(booleanAisles);
+
+                    bestSelectedOrders.clear();
+                    bestSelectedOrders.addAll(selectedOrdersBool);
+
                     bestSolution = currentSolution;
                     bestResult = computeObjectiveFunction(currentSolution);
                 }
@@ -475,11 +497,11 @@ public class ChallengeSolver {
 
             // Add next aisle to current solution
             solutionAisles.add(aislesOrder.get(i));
+            booleanAisles.set(i,true);
 
             // Try to add more orders in current solution
-            selectedOrdersItems += meta_raps(selectedOrdersBool, generateItensInHand(selectedOrdersBool, solutionAisles), 1, 1, rng);
+            selectedOrdersItems += meta_raps(selectedOrdersBool, generateItensInHand(selectedOrdersBool, booleanAisles), 1, 1, rng);
         }
-
         return bestSolution;
     }
 
@@ -619,10 +641,82 @@ public class ChallengeSolver {
        return itemsAdded;
     }
 
-    public ChallengeSolution solve(StopWatch stopWatch) {
-
-        return solution4();
+    public void removeOrderNeighbour(ArrayList<Boolean> selectedAisles, ArrayList<Boolean> selectedOrders, int i ){
+        if (selectedOrders.get(i)) selectedOrders.set(i, false);
+        else return;
+        
+        ArrayList<Integer> inHandItens = generateItensInHand(selectedOrders,selectedAisles);
+        int itemsUBSpent = 0;
+        for(int o = 0; o < nOrders; ++o){
+            if(selectedOrders.get(o)) itemsUBSpent += orderItems.get(o);
+        }
+        for(int o : sortedBySizeOrders){
+            if(o != i && !selectedOrders.get(o)){
+                boolean canSelect = true;
+                int orderSize = 0;
+                Map<Integer, Integer> order = orders.get(o);
+                for(Map.Entry<Integer, Integer> item : order.entrySet()){
+                    if(item.getValue() > inHandItens.get(item.getKey())){
+                        canSelect = false;
+                    }
+                    orderSize += item.getValue();
+                }
+                if(orderSize > waveSizeUB - itemsUBSpent) canSelect = false;
+                selectedOrders.set(o, canSelect);
+                if(canSelect) break;
+            }
+        }
     }
+
+    public  ArrayList<ArrayList<Boolean>>  removeOrderNeighborhood(ArrayList<Boolean> selectedAisles, ArrayList<Boolean> selectedOrders){
+        ArrayList<ArrayList<Boolean>> neighborhood = new ArrayList<>();
+
+        for(int o = 0; o < nOrders; ++o){
+            neighborhood.add(new ArrayList<Boolean>(selectedOrders));
+            removeOrderNeighbour(selectedAisles,neighborhood.get(o),o);
+        }
+        return neighborhood;
+    }
+
+    public ArrayList<Integer> boolToInt(ArrayList<Boolean> bools){
+        ArrayList<Integer> ints = new ArrayList<>();
+        for(int i = 0 ;i < bools.size(); ++i){
+            if(bools.get(i)) ints.add(i);
+        }
+        return ints;
+    }
+
+    public ChallengeSolution LocalSearch(ArrayList<Boolean> selectedAisles, ArrayList<Boolean> selectedOrders){
+        ChallengeSolution best = new ChallengeSolution(new HashSet<>(boolToInt(selectedOrders)), new HashSet<>(boolToInt(selectedAisles)));
+        double bestBenchMark = computeObjectiveFunction(best);
+
+        boolean reachMinimum = false;
+        while(!reachMinimum){
+            reachMinimum = true;
+
+            ArrayList<ArrayList<Boolean>> neighborHood = removeOrderNeighborhood(selectedAisles,selectedOrders);
+            for(int o = 0; o < nOrders; ++o){
+                ChallengeSolution current = new ChallengeSolution(new HashSet<>(boolToInt(neighborHood.get(o))), new HashSet<>(boolToInt(selectedAisles)));
+                double currentBenchMark = computeObjectiveFunction(current);
+                if(currentBenchMark > bestBenchMark){
+                    best = current;
+                    bestBenchMark = currentBenchMark;
+                    reachMinimum = false;
+                    selectedOrders = neighborHood.get(o);
+                }
+            }
+        }
+
+        return best;
+    }
+
+    public ChallengeSolution solve(StopWatch stopWatch) {
+        ArrayList<Boolean> o = new ArrayList<>(), a = new ArrayList<>();
+        solution4(o,a);
+        System.out.println(nAisles + " " + a.size());
+        return LocalSearch(a,o);
+    }
+
 
     /*
      * Get the remaining time in seconds
