@@ -22,7 +22,7 @@ def compile_code(source_folder):
 
     if result.returncode != 0:
         print("Maven compilation failed:")
-        print(result)
+        print(result.stderr)
         return False
 
     print("Maven compilation successful.")

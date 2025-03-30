@@ -53,7 +53,6 @@ class WaveOrderPicking:
 
         # Check if total units picked are within bounds
         if not (self.wave_size_lb <= total_units_picked <= self.wave_size_ub):
-
             return False
 
         # Compute all items that are required by the selected orders
@@ -67,7 +66,6 @@ class WaveOrderPicking:
             total_available = sum(self.aisles[aisle].get(item, 0) for aisle in visited_aisles)
             if total_required > total_available:
                 return False
-
 
         return True
 
